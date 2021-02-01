@@ -1,0 +1,56 @@
+version: "3"
+
+services:
+  web_sel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: django_sel
+    volumes:
+      - ./src:/src
+    ports:
+      - 8000:8000
+    env_file:
+      - db_keys.txt
+    depends_on:
+      - db_sel
+      - redis_sel
+#    command: python manage.py runserver 0.0.0.0:8000
+    command: bash -c "python manage.py makemigrations && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+
+
+
+  db_sel:
+    image: postgres
+    container_name: postgres
+    env_file:
+      - db_keys.txt
+
+  adminer_sel:
+    image: adminer
+    container_name: admin_db1
+    ports:
+      - "8080:8080"
+
+  redis_sel:
+    image: redis:latest
+    container_name: redis_db
+
+  selery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery_w
+    volumes:
+      - ./src:/src
+    env_file:
+      - db_keys.txt
+    depends_on:
+      - redis_sel
+    ports:
+      - 5555:5555
+#    command: celery -A first worker -c 5 -l info -B -E
+    command: bash -c "celery -A first worker -c 5 -l info -B -E & celery flower -A first"
+
+
+
